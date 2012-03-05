@@ -18,7 +18,9 @@ Install the gem:
 Add it to your Gemfile (inside development group):
 
 ``` ruby
-gem 'guard-rspec'
+group :development do
+  gem 'guard-rspec'
+end
 ```
 
 Add guard definition to your Guardfile by running this command:
@@ -54,6 +56,7 @@ guard 'rspec' do
   watch('app/controllers/application_controller.rb')  { "spec/controllers" }
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^app/(.+)\.rb$})                           { |m| "spec/#{m[1]}_spec.rb" }
+  watch(%r{^app/(.*)(\.erb|\.haml)$})                 { |m| "spec/#{m[1]}#{m[2]}_spec.rb" }
   watch(%r{^lib/(.+)\.rb$})                           { |m| "spec/lib/#{m[1]}_spec.rb" }
   watch(%r{^app/controllers/(.+)_(controller)\.rb$})  { |m| ["spec/routing/#{m[1]}_routing_spec.rb", "spec/#{m[2]}s/#{m[1]}_#{m[2]}_spec.rb", "spec/acceptance/#{m[1]}_spec.rb"] }
 end
@@ -80,7 +83,7 @@ guard 'rspec', :cli => "--color --format nested --fail-fast --drb" do
 end
 ```
 
-By default, Guard::RSpec will only look for spec files within `spec/` in your project root. You can configure Guard::RSpec to look in additional paths by using the `:spec_paths` option:
+By default, Guard::RSpec will only look for spec files within `spec` in your project root. You can configure Guard::RSpec to look in additional paths by using the `:spec_paths` option:
 
 ``` ruby
 guard 'rspec', :spec_paths => ["spec", "vendor/engines/reset/spec"] do
@@ -104,13 +107,14 @@ Former `:color`, `:drb`, `:fail_fast` and `:formatter` options are thus deprecat
 :version => 1                # force use RSpec version 1, default: 2
 :cli => "-c -f doc"          # pass arbitrary RSpec CLI arguments, default: "-f progress"
 :bundler => false            # don't use "bundle exec" to run the RSpec command, default: true
+:binstubs => true            # use "bin/rspec" to run the RSpec command (implies :bundler => true), default: false
 :rvm => ['1.8.7', '1.9.2']   # directly run your specs on multiple Rubies, default: nil
-:notification => false       # don't display Growl (or Libnotify) notification after the specs are done running, default: true
-:all_after_pass => false     # don't run all specs after changed specs pass, default: true
-:all_on_start => false       # don't run all the specs at startup, default: true
-:keep_failed => false        # keep failed specs until them pass, default: true
-:run_all => { :cli => "-p" } # override any option when running all specs
-:spec_paths => ["spec/"]     # specify an array of paths that contain spec files
+:notification => false       # display Growl (or Libnotify) notification after the specs are done running, default: true
+:all_after_pass => false     # run all specs after changed specs pass, default: true
+:all_on_start => false       # run all the specs at startup, default: true
+:keep_failed => false        # keep failed specs until they pass, default: true
+:run_all => { :cli => "-p" } # cli arguments to use when running all specs, default: same as :cli
+:spec_paths => ["spec"]      # specify an array of paths that contain spec files
 ```
 
 Notification
@@ -143,6 +147,25 @@ Running a subset of all specs
 The `:all_on_start` and `:all_after_pass` options cause all specs located in the `spec` directory to be run.  If there
 are some specs you want to skip, you can tag them with RSpec metadata (such as `:slow => true`)
 and skip them with the cli `--tag` option (i.e. `--tag ~slow`).
+
+You can also use option :spec_paths to override paths used when running all specs.
+You can use this feature to create multiple groups of guarded specs with distinct paths, and execute each in own process:
+
+``` ruby
+# in your Guardfile
+group 'acceptance-tests' do
+  guard 'rspec', :spec_paths => ['spec/acceptance'] do
+    # ...
+  end
+end
+
+group 'unit-tests' do
+  guard 'rspec', :spec_paths => ['spec/models', 'spec/controllers', 'spec/routing'] do
+    # ...
+  end
+end
+```
+
 
 Development
 -----------
