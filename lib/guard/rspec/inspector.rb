@@ -1,20 +1,26 @@
 module Guard
   class RSpec
     class Inspector
+
+      def initialize(options = {})
+        self.excluded   = options[:exclude]
+        self.spec_paths = options[:spec_paths]
+      end
+
       def excluded
         @excluded || []
       end
 
-      def excluded=(glob)
-        @excluded = Dir[glob.to_s]
+      def excluded=(pattern)
+        @excluded = Dir[pattern.to_s]
       end
 
       def spec_paths
         @spec_paths || []
       end
 
-      def spec_paths=(path_array)
-        @spec_paths = Array(path_array)
+      def spec_paths=(paths)
+        @spec_paths = Array(paths)
       end
 
       def clean(paths)
@@ -42,15 +48,14 @@ module Guard
 
       def spec_folder?(path)
         path.match(%r{^(#{spec_paths.join("|")})[^\.]*$})
-        # path.match(%r{^spec[^\.]*$})
       end
 
       def spec_files
-        @spec_files ||= spec_paths.collect { |path| Dir[File.join(path, "**", "*_spec.rb")] }.flatten
+        @spec_files ||= spec_paths.collect { |path| Dir[File.join(path, "**{,/*/**}", "*_spec.rb")] }.flatten
       end
 
       def feature_files
-        @feature_files ||= spec_paths.collect { |path| Dir[File.join(path, "**", "*.feature")] }.flatten
+        @feature_files ||= spec_paths.collect { |path| Dir[File.join(path, "**{,/*/**}", "*.feature")] }.flatten
       end
 
       def clear_spec_files_list_after

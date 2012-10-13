@@ -1,7 +1,14 @@
-require "#{File.dirname(__FILE__)}/../rspec"
+require 'guard/rspec'
 require 'guard/notifier'
+require "rspec/core/formatters/base_formatter"
 
-module Guard::RSpec::Formatter
+class Guard::RSpec::Formatter < RSpec::Core::Formatters::BaseFormatter
+
+  def dump_summary(duration, total, failures, pending)
+    message = guard_message(total, failures, pending, duration)
+    image   = guard_image(failures, pending)
+    notify(message, image)
+  end
 
   def guard_message(example_count, failure_count, pending_count, duration)
     message = "#{example_count} examples, #{failure_count} failures"
@@ -37,7 +44,7 @@ module Guard::RSpec::Formatter
 
 private
 
-  def round_float(float, decimals=4)
+  def round_float(float, decimals = 4)
     if Float.instance_method(:round).arity == 0 # Ruby 1.8
       factor = 10**decimals
       (float*factor).round / factor.to_f

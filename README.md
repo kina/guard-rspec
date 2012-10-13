@@ -1,19 +1,19 @@
-Guard::RSpec ![travis-ci](http://travis-ci.org/guard/guard-rspec.png)
-=============
+# Guard::RSpec [![Build Status](https://secure.travis-ci.org/guard/guard-rspec.png?branch=master)](http://travis-ci.org/guard/guard-rspec)
 
 RSpec guard allows to automatically & intelligently launch specs when files are modified.
 
-* Compatible with RSpec 1.x & RSpec 2.x (>= 2.4 needed for the notification feature)
-* Tested against Ruby 1.8.7, 1.9.2, REE, JRuby & Rubinius.
+* Compatible with RSpec >= 2.11 (use guard-rspec 1.2.x for older release, including RSpec 1.x)
+* Tested against Ruby 1.8.7, 1.9.2, 1.9.3, REE and the latest versions of JRuby & Rubinius.
 
-Install
--------
+## Install
 
 Please be sure to have [Guard](https://github.com/guard/guard) installed before continue.
 
 Install the gem:
 
-    $ gem install guard-rspec
+```
+$ gem install guard-rspec
+```
 
 Add it to your Gemfile (inside development group):
 
@@ -25,15 +25,15 @@ end
 
 Add guard definition to your Guardfile by running this command:
 
-    $ guard init rspec
+```
+$ guard init rspec
+```
 
-Usage
------
+## Usage
 
 Please read [Guard usage doc](https://github.com/guard/guard#readme)
 
-Guardfile
----------
+## Guardfile
 
 RSpec guard can be really adapted to all kind of projects.
 
@@ -64,16 +64,7 @@ end
 
 Please read [Guard doc](https://github.com/guard/guard#readme) for more information about the Guardfile DSL.
 
-Options
--------
-
-By default, Guard::RSpec automatically detect your RSpec version (with the `spec_helper.rb` syntax or with Bundler) but you can force the version with the `:version` option:
-
-``` ruby
-guard 'rspec', :version => 2 do
-  # ...
-end
-```
+## Options
 
 You can pass any of the standard RSpec CLI options using the `:cli` option:
 
@@ -97,17 +88,29 @@ guard 'rspec', :spec_paths => "test" do
   # ...
 end
 ```
+If you want to set an environment variable, you can configure `:env` option with a hash:
+
+``` ruby
+guard 'rspec', :env => {'RAILS_ENV' => 'guard'} do
+  # ...
+end
+```
+[Turnip](https://github.com/jnicklas/turnip) is supported (Ruby 1.9.X only), but you must enable it:
+``` ruby
+guard 'rspec', :turnip => true do
+  # ...
+end
+```
 
 
-Former `:color`, `:drb`, `:fail_fast` and `:formatter` options are thus deprecated and have no effect anymore.
+Former `:color`, `:drb`, `:fail_fast` and `:formatter` options are deprecated and have no effect anymore.
 
 ### List of available options:
 
 ``` ruby
-:version => 1                # force use RSpec version 1, default: 2
 :cli => "-c -f doc"          # pass arbitrary RSpec CLI arguments, default: "-f progress"
-:bundler => false            # don't use "bundle exec" to run the RSpec command, default: true
-:binstubs => true            # use "bin/rspec" to run the RSpec command (implies :bundler => true), default: false
+:bundler => false            # use "bundle exec" to run the RSpec command, default: true
+:binstubs => true            # use "bin/rspec" to run the RSpec command (takes precedence over :bundle), default: false
 :rvm => ['1.8.7', '1.9.2']   # directly run your specs on multiple Rubies, default: nil
 :notification => false       # display Growl (or Libnotify) notification after the specs are done running, default: true
 :all_after_pass => false     # run all specs after changed specs pass, default: true
@@ -115,7 +118,19 @@ Former `:color`, `:drb`, `:fail_fast` and `:formatter` options are thus deprecat
 :keep_failed => false        # keep failed specs until they pass, default: true
 :run_all => { :cli => "-p" } # cli arguments to use when running all specs, default: same as :cli
 :spec_paths => ["spec"]      # specify an array of paths that contain spec files
+:turnip => true              # enable turnip support; default: false
+:zeus => true                # enable zeus support; default: false
 ```
+
+You can also use a custom binstubs directory using `:binstubs => 'some-dir'`.
+
+### DRb mode
+
+When you specify `--drb` within `:cli`, guard-rspec will circumvent the `rspec` command line tool by
+directly communicating with the RSpec DRb server.  This avoids the extra overhead incurred by your
+shell, bundler and loading RSpec's environment just to send a DRb message.  It shaves off a
+second or two before the specs start to run; they should run almost immediately.
+
 
 Notification
 ------------

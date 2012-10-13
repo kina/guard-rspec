@@ -6,36 +6,32 @@ module Guard
     autoload :Runner,    'guard/rspec/runner'
     autoload :Inspector, 'guard/rspec/inspector'
 
-    def initialize(watchers=[], options={})
+    def initialize(watchers = [], options = {})
       super
       @options = {
         :all_after_pass => true,
         :all_on_start   => true,
         :keep_failed    => true,
-        :spec_paths     => ["spec"]
-      }.update(options)
+        :spec_paths     => ["spec"],
+        :run_all        => {}
+      }.merge(options)
       @last_failed  = false
       @failed_paths = []
 
-      @runner = Runner.new
-      @inspector = Inspector.new
-
-      @runner.set_rspec_version(options)
-      @inspector.excluded = @options[:exclude]
-      @inspector.spec_paths = @options[:spec_paths]
+      @inspector = Inspector.new(@options)
+      @runner    = Runner.new(@options)
     end
 
     # Call once when guard starts
     def start
-      UI.info "Guard::RSpec is running, with RSpec #{@runner.rspec_version}!"
+      UI.info "Guard::RSpec is running"
       run_all if @options[:all_on_start]
     end
 
     def run_all
-      passed = @runner.run(options[:spec_paths], options.merge(options[:run_all] || {}).merge(:message => "Running all specs"))
+      passed = @runner.run(@inspector.spec_paths, @options[:run_all].merge(:message => 'Running all specs'))
 
-      @last_failed = !passed
-      if passed
+      unless @last_failed = !passed
         @failed_paths = []
       else
         throw :task_has_failed
@@ -46,23 +42,37 @@ module Guard
       @failed_paths = []
     end
 
-    def run_on_change(paths)
+    def run_on_changes(paths)
       paths += @failed_paths if @options[:keep_failed]
       paths  = @inspector.clean(paths)
-      passed = @runner.run(paths, options)
 
-      if passed
-        # clean failed paths memory
-        @failed_paths -= paths if @options[:keep_failed]
-        # run all the specs if the changed specs failed, like autotest
-        run_all if @last_failed && @options[:all_after_pass]
+      if passed = @runner.run(paths)
+        remove_failed(paths)
+
+        # run all the specs if the run before this one failed
+        if @last_failed && @options[:all_after_pass]
+          @last_failed = false
+          run_all
+        end
       else
-        # remember failed paths for the next change
-        @failed_paths += paths if @options[:keep_failed]
-        # track whether the changed specs failed for the next change
         @last_failed = true
+        add_failed(paths)
+
         throw :task_has_failed
       end
+    end
+
+  private
+
+    def run(paths)
+    end
+
+    def remove_failed(paths)
+      @failed_paths -= paths if @options[:keep_failed]
+    end
+
+    def add_failed(paths)
+      @failed_paths += paths if @options[:keep_failed]
     end
 
   end
